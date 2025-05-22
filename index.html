@@ -132,8 +132,8 @@
         // });
         // const { get, set } = idbKeyval;
         const db = firebase.firestore();
-        // const auth = firebase.auth();
-        const auth = firebase.auth().signInWithEmailAndPassword(email, password);
+        const auth = firebase.auth();
+        // const auth = firebase.auth().signInWithEmailAndPassword(email, password);
 
         const provider = new firebase.auth.GoogleAuthProvider();
 
