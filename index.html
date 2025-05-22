@@ -132,7 +132,9 @@
         // });
 
         const db = firebase.firestore();
-        const auth = firebase.auth();
+        // const auth = firebase.auth();
+        const auth = firebase.auth().signInWithEmailAndPassword(email, password);
+
         const provider = new firebase.auth.GoogleAuthProvider();
 
         // Update UI on auth state change
