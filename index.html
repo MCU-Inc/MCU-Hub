@@ -11,6 +11,7 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
 
     <style>
         #signature-pad {
@@ -33,6 +34,12 @@
 <body class="bg-light">
     <div class="container py-4">
         <div class="card shadow">
+            <div id="authSection" class="mb-4 text-center">
+                <button id="loginBtn" class="btn btn-primary">Login with Google</button>
+                <button id="logoutBtn" class="btn btn-secondary d-none">Logout</button>
+                <div id="userInfo" class="mt-2 text-muted"></div>
+            </div>
+
             <div class="card-header bg-primary text-white">
                 <h2 class="h5 mb-0">Absence Request</h2>
             </div>
@@ -125,6 +132,36 @@
         });
 
         const db = firebase.firestore();
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
+
+        // Update UI on auth state change
+        auth.onAuthStateChanged(user => {
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const userInfo = document.getElementById('userInfo');
+            
+            if (user) {
+                loginBtn.classList.add('d-none');
+                logoutBtn.classList.remove('d-none');
+                userInfo.textContent = `Signed in as ${user.displayName}`;
+            } else {
+                loginBtn.classList.remove('d-none');
+                logoutBtn.classList.add('d-none');
+                userInfo.textContent = '';
+            }
+        });
+
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            auth.signInWithPopup(provider).catch(err => {
+                alert('Login failed: ' + err.message);
+            });
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            auth.signOut();
+        });
+
 
         // Initialize signature pad
         const canvas = document.createElement('canvas');
@@ -190,26 +227,21 @@
             signaturePad.clear();
         });
 
-        // async function submitToServer(data) {
-        //     // Replace with your actual API endpoint
-        //     try {
-        //         const response = await fetch('http://127.0.0.1:5000/api/add', {
-        //             method: 'POST',
-        //             headers: {
-        //                 'Content-Type': 'application/json',
-        //             },
-        //             body: JSON.stringify(data)
-        //         });
-                
-        //         if (!response.ok) throw new Error('Failed to submit');
-        //         return await response.json();
-        //     } catch (error) {
-        //         await storeOfflineRequest(data);
-        //         throw error;
-        //     }
-        // }
-
         async function submitToServer(data) {
+            const user = auth.currentUser;
+
+            if (!user) {
+                alert("You must be logged in to submit an absence request.");
+                throw new Error("Not authenticated");
+            }
+
+            // Add user info to the request
+            data.user = {
+                uid: user.uid,
+                name: user.displayName,
+                email: user.email
+            };
+
             try {
                 await db.collection('absenceRequests').add(data);
             } catch (error) {
