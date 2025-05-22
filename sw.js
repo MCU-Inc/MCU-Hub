@@ -1,5 +1,6 @@
 const CACHE_VERSION = 'v2';
 const CACHE_NAME = `absence-request-${CACHE_VERSION}`;
+const { get, set } = idbKeyval; // works because global `idbKeyval` exists
 const urlsToCache = [
   '/',
   '/index.html',
