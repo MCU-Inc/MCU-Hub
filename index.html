@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#317EFB"/>
+    <title>Absence Request</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        #signature-pad {
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            cursor: crosshair;
+        }
+        .btn-submit {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .offline-notification {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h5 mb-0">Absence Request</h2>
+            </div>
+            <div class="card-body">
+                <form id="absenceForm">
+                    <div class="mb-3">
+                        <label for="employeeName" class="form-label">Your Name</label>
+                        <input type="text" class="form-control" id="employeeName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="employeeId" class="form-label">Your Id</label>
+                        <input type="text" class="form-control" id="employeeId" required>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="endDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Absence Type</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="absenceType" id="vacation" value="Vacation" checked>
+                            <label class="form-check-label" for="vacation">Vacation</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="absenceType" id="dayOff" value="Day Off">
+                            <label class="form-check-label" for="dayOff">Day Off</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Signature</label>
+                        <div id="signature-pad" class="mb-2" style="height: 150px;"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearSignature">Clear Signature</button>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-submit w-100 py-2">
+                        Submit Request
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="offline-notification alert alert-warning text-center">
+        You're offline. Requests will be synced when connection is restored.
+    </div>
+
+    <!-- Toast for confirmation -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="confirmationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Your absence request has been submitted!
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6.2.0/dist/idb-keyval-min.js"></script>
+    
+    <script>
+        // TODO: Replace with your Firebase project configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "SENDER_ID",
+            appId: "APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Initialize signature pad
+        const canvas = document.createElement('canvas');
+        canvas.width = document.getElementById('signature-pad').offsetWidth;
+        canvas.height = 150;
+        document.getElementById('signature-pad').appendChild(canvas);
+        
+        const signaturePad = new SignaturePad(canvas);
+        document.getElementById('clearSignature').addEventListener('click', () => {
+            signaturePad.clear();
+        });
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(err => console.log('SW registration failed: ', err));
+            });
+        }
+
+        // Online/Offline detection
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        function updateOnlineStatus() {
+            const offlineNotification = document.querySelector('.offline-notification');
+            offlineNotification.style.display = navigator.onLine ? 'none' : 'block';
+        }
+
+        // Form Submission
+        document.getElementById('absenceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const requestData = {
+                employeeName: document.getElementById('employeeName').value,
+                employeeId: document.getElementById('employeeId').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                absenceType: document.querySelector('input[name="absenceType"]:checked').value,
+                signature: signaturePad.isEmpty() ? null : signaturePad.toDataURL(),
+                timestamp: new Date().toISOString()
+            };
+
+            if (signaturePad.isEmpty()) {
+                alert('Please provide your signature');
+                return;
+            }
+
+            if (navigator.onLine) {
+                await submitToServer(requestData);
+            } else {
+                await storeOfflineRequest(requestData);
+                updateOnlineStatus();
+            }
+            
+            // Show confirmation
+            const toast = new bootstrap.Toast(document.getElementById('confirmationToast'));
+            toast.show();
+            
+            // Reset form
+            e.target.reset();
+            signaturePad.clear();
+        });
+
+        // async function submitToServer(data) {
+        //     // Replace with your actual API endpoint
+        //     try {
+        //         const response = await fetch('http://127.0.0.1:5000/api/add', {
+        //             method: 'POST',
+        //             headers: {
+        //                 'Content-Type': 'application/json',
+        //             },
+        //             body: JSON.stringify(data)
+        //         });
+                
+        //         if (!response.ok) throw new Error('Failed to submit');
+        //         return await response.json();
+        //     } catch (error) {
+        //         await storeOfflineRequest(data);
+        //         throw error;
+        //     }
+        // }
+
+        async function submitToServer(data) {
+            try {
+                await db.collection('absenceRequests').add(data);
+            } catch (error) {
+                await storeOfflineRequest(data);
+                throw error;
+            }
+        }
+
+        async function storeOfflineRequest(data) {
+            const requests = await idbKeyval.get('offlineRequests') || [];
+            requests.push(data);
+            await idbKeyval.set('offlineRequests', requests);
+        }
+
+        // Sync when coming back online
+        window.addEventListener('online', async () => {
+            const requests = await idbKeyval.get('offlineRequests') || [];
+            if (requests.length > 0) {
+                for (const request of requests) {
+                    try {
+                        await submitToServer(request);
+                    } catch (error) {
+                        console.error('Failed to sync request:', error);
+                        break;
+                    }
+                }
+                await idbKeyval.set('offlineRequests', []);
+            }
+        });
+    </script>
+</body>
+</html>
