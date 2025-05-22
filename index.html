@@ -253,9 +253,9 @@
         }
 
         async function storeOfflineRequest(data) {
-            const requests = await idbKeyval.get('offlineRequests') || [];
+            const requests = await window.idbKeyval.get('offlineRequests') || [];
             requests.push(data);
-            await idbKeyval.set('offlineRequests', requests);
+            await window.idbKeyval.set('offlineRequests', requests);
         }
 
         // Sync when coming back online
