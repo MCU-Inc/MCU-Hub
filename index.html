@@ -119,6 +119,11 @@
         };
 
         firebase.initializeApp(firebaseConfig);
+        
+        firebase.firestore().settings({
+        experimentalForceLongPolling: true
+        });
+
         const db = firebase.firestore();
 
         // Initialize signature pad
