@@ -58,11 +58,6 @@
             <label for="employeeName" class="form-label">Your Name</label>
             <input type="text" class="form-control" id="employeeName" required />
           </div>
-          <div class="mb-3">
-            <label for="employeeId" class="form-label">Your Id</label>
-            <input type="text" class="form-control" id="employeeId" required />
-          </div>
-
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="startDate" class="form-label">Start Date</label>
@@ -76,13 +71,43 @@
 
           <div class="mb-3">
             <label class="form-label">Absence Type</label>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="absenceType" id="vacation" value="Vacation" checked />
-              <label class="form-check-label" for="vacation">Vacation</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="absenceType" id="dayOff" value="Day Off" />
-              <label class="form-check-label" for="dayOff">Day Off</label>
+            <div class="row">
+              <div class="col-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="absenceType" id="sick" value="Sick" checked />
+                  <label class="form-check-label" for="sick">Sick</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="absenceType" id="vacation" value="Vacation" />
+                  <label class="form-check-label" for="vacation">Vacation</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="absenceType" id="timeOff" value="Time Off" />
+                  <label class="form-check-label" for="timeOff">Time Off</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="absenceType" id="bereavement" value="Bereavement" />
+                  <label class="form-check-label" for="bereavement">Bereavement</label>
+                </div>
+              </div>                
+              <div class="col-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="absenceType" id="parentalLeave" value="Parental Leave" />
+                  <label class="form-check-label" for="parentalLeave">Parental Leave</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="absenceType" id="other" value="Other" />
+                  <label class="form-check-label" for="other">Other</label>
+                </div>
+              </div>                            
             </div>
           </div>
 
@@ -185,7 +210,6 @@
 
         const requestData = {
           employeeName: document.getElementById('employeeName').value,
-          employeeId: document.getElementById('employeeId').value,
           startDate: document.getElementById('startDate').value,
           endDate: document.getElementById('endDate').value,
           absenceType: document.querySelector('input[name="absenceType"]:checked').value,
